@@ -1,4 +1,5 @@
 import { type LinkProps } from '@tanstack/react-router'
+import { type RolNombre } from '@/features/auth/roles'
 
 type User = {
   name: string
@@ -16,6 +17,8 @@ type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  // Sin roles, el ítem es visible para todos
+  roles?: RolNombre[]
 }
 
 type NavLink = BaseNavItem & {

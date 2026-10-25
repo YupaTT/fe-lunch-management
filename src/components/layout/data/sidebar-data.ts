@@ -1,205 +1,76 @@
 import {
-  Construction,
-  LayoutDashboard,
-  Monitor,
   Bug,
-  ListTodo,
-  FileX,
   HelpCircle,
-  Lock,
-  Bell,
-  Package,
-  Palette,
-  ServerOff,
-  Settings,
-  Wrench,
-  UserCog,
-  UserX,
-  Users,
+  KeyRound,
+  LayoutDashboard,
+  ListTodo,
   MessagesSquare,
-  ShieldCheck,
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
+  Package,
+  Settings,
+  SlidersHorizontal,
+  Users,
+  UtensilsCrossed,
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
-import { type SidebarData } from '../types'
+import { Rol } from '@/features/auth/roles'
+import { type NavGroup, type SidebarData } from '../types'
+
+const demoGroup: NavGroup = {
+  title: 'Plantilla (demo)',
+  items: [
+    { title: 'Tasks', url: '/tasks', icon: ListTodo },
+    { title: 'Apps', url: '/apps', icon: Package },
+    { title: 'Chats', url: '/chats', icon: MessagesSquare },
+    { title: 'Settings', url: '/settings', icon: Settings },
+    { title: 'Errors', url: '/errors/not-found', icon: Bug },
+    { title: 'Help Center', url: '/help-center', icon: HelpCircle },
+  ],
+}
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
+    name: '',
+    email: '',
+    avatar: '',
   },
   teams: [
     {
-      name: 'Shadcn Admin',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
+      name: 'Gestión de Almuerzos',
+      logo: UtensilsCrossed,
+      plan: 'Restaurante institucional',
     },
   ],
   navGroups: [
     {
       title: 'General',
+      items: [{ title: 'Inicio', url: '/', icon: LayoutDashboard }],
+    },
+    {
+      title: 'Administración',
       items: [
         {
-          title: 'Dashboard',
-          url: '/',
-          icon: LayoutDashboard,
-        },
-        {
-          title: 'Tasks',
-          url: '/tasks',
-          icon: ListTodo,
-        },
-        {
-          title: 'Apps',
-          url: '/apps',
-          icon: Package,
-        },
-        {
-          title: 'Chats',
-          url: '/chats',
-          badge: '3',
-          icon: MessagesSquare,
-        },
-        {
-          title: 'Users',
+          title: 'Empleados',
           url: '/users',
           icon: Users,
+          roles: [Rol.ADMINISTRADOR, Rol.ENCARGADO],
         },
         {
-          title: 'Secured by Clerk',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
-          ],
+          title: 'Configuración',
+          url: '/configuracion',
+          icon: SlidersHorizontal,
+          roles: [Rol.ADMINISTRADOR],
         },
       ],
     },
     {
-      title: 'Pages',
+      title: 'Mi cuenta',
       items: [
         {
-          title: 'Auth',
-          icon: ShieldCheck,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/sign-in',
-            },
-            {
-              title: 'Sign In (2 Col)',
-              url: '/sign-in-2',
-            },
-            {
-              title: 'Sign Up',
-              url: '/sign-up',
-            },
-            {
-              title: 'Forgot Password',
-              url: '/forgot-password',
-            },
-            {
-              title: 'OTP',
-              url: '/otp',
-            },
-          ],
-        },
-        {
-          title: 'Errors',
-          icon: Bug,
-          items: [
-            {
-              title: 'Unauthorized',
-              url: '/errors/unauthorized',
-              icon: Lock,
-            },
-            {
-              title: 'Forbidden',
-              url: '/errors/forbidden',
-              icon: UserX,
-            },
-            {
-              title: 'Not Found',
-              url: '/errors/not-found',
-              icon: FileX,
-            },
-            {
-              title: 'Internal Server Error',
-              url: '/errors/internal-server-error',
-              icon: ServerOff,
-            },
-            {
-              title: 'Maintenance Error',
-              url: '/errors/maintenance-error',
-              icon: Construction,
-            },
-          ],
+          title: 'Cambiar contraseña',
+          url: '/cuenta/contrasena',
+          icon: KeyRound,
         },
       ],
     },
-    {
-      title: 'Other',
-      items: [
-        {
-          title: 'Settings',
-          icon: Settings,
-          items: [
-            {
-              title: 'Profile',
-              url: '/settings',
-              icon: UserCog,
-            },
-            {
-              title: 'Account',
-              url: '/settings/account',
-              icon: Wrench,
-            },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
-            {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: 'Display',
-              url: '/settings/display',
-              icon: Monitor,
-            },
-          ],
-        },
-        {
-          title: 'Help Center',
-          url: '/help-center',
-          icon: HelpCircle,
-        },
-      ],
-    },
+    ...(import.meta.env.DEV ? [demoGroup] : []),
   ],
 }

@@ -18,6 +18,7 @@ type DataTableToolbarProps<TData> = {
       icon?: React.ComponentType<{ className?: string }>
     }[]
   }[]
+  children?: React.ReactNode
 }
 
 export function DataTableToolbar<TData>({
@@ -25,6 +26,7 @@ export function DataTableToolbar<TData>({
   searchPlaceholder = 'Filter...',
   searchKey,
   filters = [],
+  children,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getState().columnFilters.length > 0 || table.getState().globalFilter
@@ -64,6 +66,7 @@ export function DataTableToolbar<TData>({
               />
             )
           })}
+          {children}
         </div>
         {isFiltered && (
           <Button
@@ -74,7 +77,7 @@ export function DataTableToolbar<TData>({
             }}
             className='h-8 px-2 lg:px-3'
           >
-            Reset
+            Limpiar
             <Cross2Icon className='ms-2 h-4 w-4' />
           </Button>
         )}
