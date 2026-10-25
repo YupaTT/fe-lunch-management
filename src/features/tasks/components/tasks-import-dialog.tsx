@@ -2,16 +2,6 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { showSubmittedData } from '@/lib/show-submitted-data'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -21,6 +11,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { FormDialog } from '@/components/form-dialog'
 
 const formSchema = z.object({
   file: z
@@ -65,51 +56,41 @@ export function TasksImportDialog({
   }
 
   return (
-    <Dialog
+    <FormDialog
       open={open}
       onOpenChange={(val) => {
         onOpenChange(val)
         form.reset()
       }}
+      title='Import Tasks'
+      description='Import tasks quickly from a CSV file.'
+      formId='task-import-form'
+      submitText='Import'
+      cancelText='Close'
+      className='gap-2 sm:max-w-sm'
     >
-      <DialogContent className='gap-2 sm:max-w-sm'>
-        <DialogHeader className='text-start'>
-          <DialogTitle>Import Tasks</DialogTitle>
-          <DialogDescription>
-            Import tasks quickly from a CSV file.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form id='task-import-form' onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name='file'
-              render={() => (
-                <FormItem className='my-2'>
-                  <FormLabel>File</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='file'
-                      accept='text/csv'
-                      {...fileRef}
-                      className='h-8 py-0'
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <DialogFooter className='gap-2'>
-          <DialogClose asChild>
-            <Button variant='outline'>Close</Button>
-          </DialogClose>
-          <Button type='submit' form='task-import-form'>
-            Import
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <Form {...form}>
+        <form id='task-import-form' onSubmit={form.handleSubmit(onSubmit)}>
+          <FormField
+            control={form.control}
+            name='file'
+            render={() => (
+              <FormItem className='my-2'>
+                <FormLabel>File</FormLabel>
+                <FormControl>
+                  <Input
+                    type='file'
+                    accept='text/csv'
+                    {...fileRef}
+                    className='h-8 py-0'
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+    </FormDialog>
   )
 }

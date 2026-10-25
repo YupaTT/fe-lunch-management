@@ -16,13 +16,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+  InputField,
+  SelectField,
+  TextareaField,
+} from '@/components/form-fields'
 
 const profileFormSchema = z.object({
   username: z
@@ -74,69 +71,41 @@ export function ProfileForm() {
         onSubmit={form.handleSubmit((data) => showSubmittedData(data))}
         className='space-y-8'
       >
-        <FormField
+        <InputField
           control={form.control}
           name='username'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input placeholder='shadcn' {...field} />
-              </FormControl>
-              <FormDescription>
-                This is your public display name. It can be your real name or a
-                pseudonym. You can only change this once every 30 days.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='Username'
+          placeholder='shadcn'
+          description='This is your public display name. It can be your real name or a pseudonym. You can only change this once every 30 days.'
         />
-        <FormField
+        <SelectField
           control={form.control}
           name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder='Select a verified email to display' />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value='m@example.com'>m@example.com</SelectItem>
-                  <SelectItem value='m@google.com'>m@google.com</SelectItem>
-                  <SelectItem value='m@support.com'>m@support.com</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                You can manage verified email addresses in your{' '}
-                <Link to='/'>email settings</Link>.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='Email'
+          placeholder='Select a verified email to display'
+          options={[
+            { label: 'm@example.com', value: 'm@example.com' },
+            { label: 'm@google.com', value: 'm@google.com' },
+            { label: 'm@support.com', value: 'm@support.com' },
+          ]}
+          description={
+            <>
+              You can manage verified email addresses in your{' '}
+              <Link to='/'>email settings</Link>.
+            </>
+          }
         />
-        <FormField
+        <TextareaField
           control={form.control}
           name='bio'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bio</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder='Tell us a little bit about yourself'
-                  className='resize-none'
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                You can <span>@mention</span> other users and organizations to
-                link to them.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='Bio'
+          placeholder='Tell us a little bit about yourself'
+          description={
+            <>
+              You can <span>@mention</span> other users and organizations to
+              link to them.
+            </>
+          }
         />
         <div>
           {fields.map((field, index) => (
