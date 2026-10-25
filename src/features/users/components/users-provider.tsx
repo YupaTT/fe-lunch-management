@@ -1,21 +1,26 @@
 import React, { useState } from 'react'
 import useDialogState from '@/hooks/use-dialog-state'
-import { type User } from '../data/schema'
+import { type Usuario } from '../data/schema'
 
-type UsersDialogType = 'invite' | 'add' | 'edit' | 'delete'
+type UsersDialogType =
+  | 'create'
+  | 'edit'
+  | 'toggle-status'
+  | 'restore-password'
+  | 'familiares'
 
 type UsersContextType = {
   open: UsersDialogType | null
   setOpen: (str: UsersDialogType | null) => void
-  currentRow: User | null
-  setCurrentRow: React.Dispatch<React.SetStateAction<User | null>>
+  currentRow: Usuario | null
+  setCurrentRow: React.Dispatch<React.SetStateAction<Usuario | null>>
 }
 
 const UsersContext = React.createContext<UsersContextType | null>(null)
 
 export function UsersProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useDialogState<UsersDialogType>(null)
-  const [currentRow, setCurrentRow] = useState<User | null>(null)
+  const [currentRow, setCurrentRow] = useState<Usuario | null>(null)
 
   return (
     <UsersContext value={{ open, setOpen, currentRow, setCurrentRow }}>
@@ -29,7 +34,7 @@ export const useUsers = () => {
   const usersContext = React.useContext(UsersContext)
 
   if (!usersContext) {
-    throw new Error('useUsers has to be used within <UsersContext>')
+    throw new Error('useUsers has to be used within <UsersProvider>')
   }
 
   return usersContext

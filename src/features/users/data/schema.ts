@@ -1,30 +1,44 @@
-import { z } from 'zod'
+import { type Persona, type PersonaPayload } from '@/lib/persona'
 
-const userStatusSchema = z.union([
-  z.literal('active'),
-  z.literal('inactive'),
-  z.literal('invited'),
-  z.literal('suspended'),
-])
-export type UserStatus = z.infer<typeof userStatusSchema>
+export type UsuarioEstado = 'ACTIVO' | 'INACTIVO' | 'PENDIENTE'
 
-const userRoleSchema = z.union([
-  z.literal('superadmin'),
-  z.literal('admin'),
-  z.literal('cashier'),
-  z.literal('manager'),
-])
+export type Usuario = {
+  id: string
+  correoElectronico: string
+  estado: UsuarioEstado
+  cantidadFamiliares: number
+  usuarioRol: {
+    id: string
+    estado: string
+    rol: { id: string; rol: string }
+  }[]
+  persona: Persona
+}
 
-const _userSchema = z.object({
-  id: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  username: z.string(),
-  email: z.string(),
-  phoneNumber: z.string(),
-  status: userStatusSchema,
-  role: userRoleSchema,
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-})
-export type User = z.infer<typeof _userSchema>
+export type Rol = {
+  id: string
+  rol: string
+  nombre: string
+  estado: string
+}
+
+export type UsuariosParams = {
+  pagina: number
+  limite: number
+  filtro?: string
+  orden?: string
+  rol?: string
+  estado?: string
+}
+
+export type UsuarioPayload = {
+  correoElectronico: string
+  roles: string[]
+  persona: PersonaPayload
+}
+
+export type ContrasenaTemporal = {
+  id: string
+  estado: UsuarioEstado
+  contrasenaTemporal: string
+}
