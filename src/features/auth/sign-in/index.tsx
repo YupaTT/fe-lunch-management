@@ -1,58 +1,21 @@
-import { Link, useSearch } from '@tanstack/react-router'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { AuthLayout } from '../auth-layout'
+import { useSearch } from '@tanstack/react-router'
+import { UtensilsCrossed } from 'lucide-react'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
   const { redirect } = useSearch({ from: '/(auth)/sign-in' })
 
   return (
-    <AuthLayout>
-      <Card className='max-w-sm gap-4'>
-        <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>Sign in</CardTitle>
-          <CardDescription>
-            Enter your email and password below to log into{' '}
-            <br className='max-sm:hidden' /> your account. Don't have an
-            account?{' '}
-            <Link
-              to='/sign-up'
-              className='text-nowrap underline underline-offset-4 hover:text-primary'
-            >
-              Sign Up
-            </Link>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <UserAuthForm redirectTo={redirect} />
-        </CardContent>
-        <CardFooter>
-          <p className='px-8 text-center text-sm text-muted-foreground'>
-            By clicking sign in, you agree to our{' '}
-            <a
-              href='/terms'
-              className='underline underline-offset-4 hover:text-primary'
-            >
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a
-              href='/privacy'
-              className='underline underline-offset-4 hover:text-primary'
-            >
-              Privacy Policy
-            </a>
-            .
-          </p>
-        </CardFooter>
-      </Card>
-    </AuthLayout>
+    <div className='flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10'>
+      <div className='flex w-full max-w-sm flex-col gap-6'>
+        <div className='flex items-center gap-2 self-center font-medium'>
+          <div className='flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground'>
+            <UtensilsCrossed className='size-4' />
+          </div>
+          Gestión de Almuerzos
+        </div>
+        <UserAuthForm redirectTo={redirect} />
+      </div>
+    </div>
   )
 }

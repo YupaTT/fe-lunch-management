@@ -2,21 +2,17 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, UserPlus } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
 import { sleep, cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Form } from '@/components/ui/form'
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
+  InputField,
+  PasswordField,
+  SubmitButton,
+} from '@/components/form-fields'
 
 const formSchema = z
   .object({
@@ -70,49 +66,26 @@ export function SignUpForm({
         className={cn('grid gap-3', className)}
         {...props}
       >
-        <FormField
+        <InputField
           control={form.control}
           name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder='name@example.com' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='Email'
+          placeholder='name@example.com'
         />
-        <FormField
+        <PasswordField
           control={form.control}
           name='password'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder='********' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='Password'
         />
-        <FormField
+        <PasswordField
           control={form.control}
           name='confirmPassword'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder='********' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label='Confirm Password'
         />
-        <Button className='mt-2' disabled={isLoading}>
-          {isLoading ? <Loader2 className='animate-spin' /> : <UserPlus />}
+        <SubmitButton className='mt-2' loading={isLoading}>
+          {!isLoading && <UserPlus />}
           Create Account
-        </Button>
+        </SubmitButton>
 
         <div className='relative my-2'>
           <div className='absolute inset-0 flex items-center'>

@@ -7,15 +7,20 @@ async function importAuthStore() {
 }
 
 const sampleUser = {
-  accountNo: 'ACC-1',
-  email: 'user@example.com',
-  role: ['user'],
-  exp: 1_700_000_000,
+  id: '1',
+  correoElectronico: 'juan.perez@unionbo.com',
+  estado: 'ACTIVO',
+  idRol: '1',
+  rol: 'ADMINISTRADOR',
+  roles: [{ idRol: '1', rol: 'ADMINISTRADOR', nombre: 'Administrador' }],
+  requiereCambioContrasena: false,
+  persona: { nombres: 'JUAN', primerApellido: 'PEREZ', nroDocumento: '1' },
 }
 
 describe('useAuthStore', () => {
   beforeEach(() => {
     clearCookies()
+    localStorage.clear()
     vi.resetModules()
   })
 

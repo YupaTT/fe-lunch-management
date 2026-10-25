@@ -3,22 +3,15 @@ import { render, type RenderResult } from 'vitest-browser-react'
 import { type Locator, userEvent } from 'vitest/browser'
 import { UserAuthForm } from './user-auth-form'
 
-const FORM_MESSAGES = {
-  emailEmpty: 'Please enter your email.',
-  passwordEmpty: 'Please enter your password.',
-  passwordShort: 'Password must be at least 7 characters long.',
-} as const
-
 const navigate = vi.fn()
-const setUserMock = vi.fn()
-const setAccessTokenMock = vi.fn()
+const mutate = vi.fn()
 
-vi.mock('@/stores/auth-store', () => ({
-  useAuthStore: () => ({
-    auth: {
-      setUser: setUserMock,
-      setAccessToken: setAccessTokenMock,
-    },
+vi.mock('../../api', () => ({
+  useLogin: () => ({
+    mutate,
+    isPending: false,
+    isError: false,
+    error: null,
   }),
 }))
 
@@ -27,107 +20,89 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => navigate,
-    Link: ({
-      children,
-      to,
-      className,
-      ...rest
-    }: {
-      children?: React.ReactNode
-      to: string
-      className?: string
-    }) => (
-      <a href={to} className={className} {...rest}>
-        {children}
-      </a>
+    Link: ({ children, to }: { children?: React.ReactNode; to: string }) => (
+      <a href={to}>{children}</a>
     ),
   }
 })
 
-vi.mock('@/lib/utils', async (orig) => ({
-  ...(await orig()),
-  sleep: vi.fn(() => Promise.resolve()),
-}))
+const user = {
+  correoElectronico: 'juan.perez@unionbo.com',
+  requiereCambioContrasena: false,
+  persona: { nombres: 'JUAN', primerApellido: 'PEREZ' },
+}
 
 describe('UserAuthForm', () => {
-  describe('Rendering without redirectTo', () => {
-    let screen: RenderResult
-    let emailInput: Locator
-    let passwordInput: Locator
-    let signInButton: Locator
-    let forgotPasswordLink: Locator
+  let screen: RenderResult
+  let correoInput: Locator
+  let contrasenaInput: Locator
+  let submitButton: Locator
 
-    beforeEach(async () => {
-      vi.clearAllMocks()
-      screen = await render(<UserAuthForm />)
-      emailInput = screen.getByRole('textbox', { name: /^Email$/i })
-      passwordInput = screen.getByLabelText(/^Password$/i)
-      signInButton = screen.getByRole('button', { name: /^Sign in$/i })
-      forgotPasswordLink = screen.getByText(/^Forgot password\?$/i)
-    })
+  async function setup(redirectTo?: string) {
+    screen = await render(<UserAuthForm redirectTo={redirectTo} />)
+    correoInput = screen.getByRole('textbox', { name: /^Correo electrónico$/i })
+    contrasenaInput = screen.getByLabelText(/^Contraseña$/i)
+    submitButton = screen.getByRole('button', { name: /^Iniciar sesión$/i })
+  }
 
-    it('renders fields, submit button, and forgot password link', async () => {
-      await expect.element(emailInput).toBeInTheDocument()
-      await expect.element(passwordInput).toBeInTheDocument()
-      await expect.element(signInButton).toBeInTheDocument()
-      await expect.element(forgotPasswordLink).toBeInTheDocument()
-    })
-
-    it('shows validation messages when submitting empty form', async () => {
-      await userEvent.click(signInButton)
-
-      await expect
-        .element(screen.getByText(FORM_MESSAGES.emailEmpty))
-        .toBeInTheDocument()
-      await expect
-        .element(screen.getByText(FORM_MESSAGES.passwordEmpty))
-        .toBeInTheDocument()
-    })
-
-    it('authenticates and navigates to default route on success', async () => {
-      await userEvent.fill(emailInput, 'a@b.com')
-      await userEvent.fill(passwordInput, '1234567')
-
-      await userEvent.click(signInButton)
-
-      await vi.waitFor(() => expect(setUserMock).toHaveBeenCalledOnce())
-      expect(setUserMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          email: 'a@b.com',
-          accountNo: expect.any(String),
-          role: expect.any(Array),
-          exp: expect.any(Number),
-        })
-      )
-      expect(setAccessTokenMock).toHaveBeenCalledOnce()
-      expect(setAccessTokenMock).toHaveBeenCalledWith('mock-access-token')
-
-      await vi.waitFor(() =>
-        expect(navigate).toHaveBeenCalledWith({ to: '/', replace: true })
-      )
-    })
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mutate.mockImplementation((_data, opts) => opts?.onSuccess?.(user))
   })
 
-  it('navigates to redirectTo when provided', async () => {
-    vi.clearAllMocks()
+  it('shows validation messages when submitting empty form', async () => {
+    await setup()
+    await userEvent.click(submitButton)
 
-    const { getByRole, getByLabelText } = await render(
-      <UserAuthForm redirectTo='/settings' />
+    await expect
+      .element(screen.getByText('Ingrese su correo electrónico.'))
+      .toBeInTheDocument()
+    await expect
+      .element(screen.getByText('Ingrese su contraseña.'))
+      .toBeInTheDocument()
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('submits credentials and navigates to default route', async () => {
+    await setup()
+    await userEvent.fill(correoInput, 'juan.perez@unionbo.com')
+    await userEvent.fill(contrasenaInput, '123')
+    await userEvent.click(submitButton)
+
+    await vi.waitFor(() =>
+      expect(mutate).toHaveBeenCalledWith(
+        { correoElectronico: 'juan.perez@unionbo.com', contrasena: '123' },
+        expect.any(Object)
+      )
     )
+    expect(navigate).toHaveBeenCalledWith({ to: '/', replace: true })
+  })
 
-    await userEvent.fill(getByRole('textbox', { name: /Email/i }), 'a@b.com')
-    await userEvent.fill(getByLabelText('Password'), '1234567')
-
-    await userEvent.click(getByRole('button', { name: /Sign in/i }))
-
-    await vi.waitFor(() => expect(setUserMock).toHaveBeenCalledOnce())
-    expect(setAccessTokenMock).toHaveBeenCalledOnce()
+  it('sends the user to change password when a temporary one was used', async () => {
+    mutate.mockImplementation((_data, opts) =>
+      opts?.onSuccess?.({ ...user, requiereCambioContrasena: true })
+    )
+    await setup('/users')
+    await userEvent.fill(correoInput, 'juan.perez@unionbo.com')
+    await userEvent.fill(contrasenaInput, 'Temporal123')
+    await userEvent.click(submitButton)
 
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
-        to: '/settings',
+        to: '/cuenta/contrasena',
         replace: true,
       })
+    )
+  })
+
+  it('navigates to redirectTo when provided', async () => {
+    await setup('/users')
+    await userEvent.fill(correoInput, 'juan.perez@unionbo.com')
+    await userEvent.fill(contrasenaInput, '123')
+    await userEvent.click(submitButton)
+
+    await vi.waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({ to: '/users', replace: true })
     )
   })
 })
