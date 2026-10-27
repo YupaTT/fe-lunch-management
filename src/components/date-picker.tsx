@@ -1,4 +1,7 @@
+import * as React from 'react'
 import { format } from 'date-fns'
+import { cn } from 'cn'
+import { es } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -8,7 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 
-type DatePickerProps = {
+type DatePickerProps = Omit<React.ComponentProps<'button'>, 'onSelect'> & {
   selected: Date | undefined
   onSelect: (date: Date | undefined) => void
   placeholder?: string
@@ -17,18 +20,27 @@ type DatePickerProps = {
 export function DatePicker({
   selected,
   onSelect,
-  placeholder = 'Pick a date',
+  placeholder = 'Seleccione una fecha',
+  className,
+  ...props
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false)
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          type='button'
           variant='outline'
           data-empty={!selected}
-          className='w-60 justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+          className={cn(
+            'w-full justify-start rounded-3xl border-transparent bg-input/50 px-3 text-start font-normal hover:bg-input/50 data-[empty=true]:text-muted-foreground dark:bg-input/50 dark:hover:bg-input/50',
+            className
+          )}
+          {...props}
         >
           {selected ? (
-            format(selected, 'MMM d, yyyy')
+            format(selected, 'dd/MM/yyyy')
           ) : (
             <span>{placeholder}</span>
           )}
@@ -38,9 +50,16 @@ export function DatePicker({
       <PopoverContent className='w-auto p-0'>
         <Calendar
           mode='single'
+          locale={es}
           captionLayout='dropdown'
+          defaultMonth={selected}
+          startMonth={new Date(1900, 0)}
+          endMonth={new Date()}
           selected={selected}
-          onSelect={onSelect}
+          onSelect={(date) => {
+            onSelect(date)
+            setOpen(false)
+          }}
           disabled={(date: Date) =>
             date > new Date() || date < new Date('1900-01-01')
           }

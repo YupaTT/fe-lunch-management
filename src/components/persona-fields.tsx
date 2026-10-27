@@ -4,7 +4,7 @@ import {
   type PersonaFormValues,
   tipoDocumentoOptions,
 } from '@/lib/persona'
-import { InputField, SelectField } from '@/components/form-fields'
+import { DateField, InputField, SelectField } from '@/components/form-fields'
 
 type PersonaFieldsProps<T extends { persona: PersonaFormValues }> = {
   control: Control<T>
@@ -53,11 +53,10 @@ export function PersonaFields<T extends { persona: PersonaFormValues }>({
         label={generoRequerido ? 'Género' : 'Género (opcional)'}
         options={generoOptions}
       />
-      <InputField
+      <DateField
         control={control}
         name={name('fechaNacimiento')}
         label='Fecha de nacimiento (opcional)'
-        type='date'
       />
     </div>
   )

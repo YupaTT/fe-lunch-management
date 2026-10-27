@@ -1,3 +1,4 @@
+import { format, isValid, parseISO } from 'date-fns'
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { DatePicker } from '@/components/date-picker'
 import { PasswordInput } from '@/components/password-input'
 
 type BaseFieldProps<T extends FieldValues> = {
@@ -199,6 +201,90 @@ export function SelectField<T extends FieldValues>({
               ))}
             </SelectContent>
           </Select>
+        </FieldShell>
+      )}
+    />
+  )
+}
+
+// El formulario guarda la fecha como texto yyyy-MM-dd (así la espera el backend)
+function toDate(value: unknown) {
+  const date = parseISO(String(value ?? ''))
+  return isValid(date) ? date : undefined
+}
+
+type DateFieldProps<T extends FieldValues> = BaseFieldProps<T> & {
+  placeholder?: string
+  disabled?: boolean
+}
+
+export function DateField<T extends FieldValues>({
+  control,
+  name,
+  label,
+  description,
+  className,
+  placeholder,
+  disabled,
+}: DateFieldProps<T>) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FieldShell
+          label={label}
+          description={description}
+          className={className}
+        >
+          <FormControl>
+            <DatePicker
+              selected={toDate(field.value)}
+              onSelect={(date) =>
+                field.onChange(date ? format(date, 'yyyy-MM-dd') : '')
+              }
+              onBlur={field.onBlur}
+              placeholder={placeholder}
+              disabled={disabled}
+            />
+          </FormControl>
+        </FieldShell>
+      )}
+    />
+  )
+}
+
+type TimeFieldProps<T extends FieldValues> = BaseFieldProps<T> & {
+  disabled?: boolean
+}
+
+// El formulario guarda la hora como texto HH:mm
+export function TimeField<T extends FieldValues>({
+  control,
+  name,
+  label,
+  description,
+  className,
+  disabled,
+}: TimeFieldProps<T>) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FieldShell
+          label={label}
+          description={description}
+          className={className}
+        >
+          <FormControl>
+            <Input
+              type='time'
+              disabled={disabled}
+              className='appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
+              {...field}
+            />
+          </FormControl>
         </FieldShell>
       )}
     />

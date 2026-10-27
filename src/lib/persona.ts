@@ -90,8 +90,8 @@ export type PersonaPayload = ReturnType<typeof toPersonaPayload>
 export function toPersonaPayload(values: PersonaFormValues) {
   return {
     nombres: values.nombres,
-    primerApellido: values.primerApellido || undefined,
-    segundoApellido: values.segundoApellido || undefined,
+    primerApellido: values.primerApellido || null,
+    segundoApellido: values.segundoApellido || null,
     tipoDocumento: values.tipoDocumento,
     nroDocumento: values.nroDocumento || null,
     fechaNacimiento: values.fechaNacimiento || null,

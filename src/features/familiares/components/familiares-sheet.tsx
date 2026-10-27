@@ -1,13 +1,9 @@
 import { useState } from 'react'
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
 import { Pencil, Plus, Power, PowerOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/api/client'
 import { getNombreCompleto } from '@/lib/persona'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,15 +13,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { DataTable } from '@/components/data-table'
 import { useCambiarEstadoFamiliar, useFamiliares } from '../api'
-import { type Familiar, parentescoLabels } from '../schema'
+import { type Familiar, type FamiliarEstado, parentescoLabels } from '../schema'
 import { FamiliarFormDialog } from './familiar-form-dialog'
 
 type FamiliaresSheetProps = {
@@ -35,6 +31,11 @@ type FamiliaresSheetProps = {
 }
 
 type Accion = { tipo: 'crear' } | { tipo: 'editar' | 'estado'; row: Familiar }
+
+const estadoStyles: Record<FamiliarEstado, string> = {
+  ACTIVO: 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200',
+  INACTIVO: 'bg-rose-100/40 text-rose-900 dark:text-rose-200 border-rose-200',
+}
 
 function IconAction({
   label,
@@ -63,63 +64,6 @@ function IconAction({
   )
 }
 
-function getColumns(onAction: (accion: Accion) => void): ColumnDef<Familiar>[] {
-  return [
-    {
-      id: 'nombre',
-      header: 'Nombre',
-      cell: ({ row }) => (
-        <span className='font-medium'>
-          {getNombreCompleto(row.original.persona)}
-        </span>
-      ),
-    },
-    {
-      id: 'parentesco',
-      header: 'Parentesco',
-      cell: ({ row }) => parentescoLabels[row.original.parentesco],
-    },
-    {
-      id: 'documento',
-      header: 'Documento',
-      cell: ({ row }) => row.original.persona.nroDocumento ?? '—',
-    },
-    {
-      id: 'estado',
-      header: 'Estado',
-      cell: ({ row }) =>
-        row.original.estado === 'ACTIVO' ? (
-          <Badge variant='outline'>Activo</Badge>
-        ) : (
-          <Badge variant='secondary'>De baja</Badge>
-        ),
-    },
-    {
-      id: 'acciones',
-      meta: { className: 'w-24 text-end' },
-      cell: ({ row }) => {
-        const activo = row.original.estado === 'ACTIVO'
-        return (
-          <div className='flex justify-end'>
-            <IconAction
-              label='Editar'
-              onClick={() => onAction({ tipo: 'editar', row: row.original })}
-            >
-              <Pencil />
-            </IconAction>
-            <IconAction
-              label={activo ? 'Dar de baja' : 'Reactivar'}
-              onClick={() => onAction({ tipo: 'estado', row: row.original })}
-            >
-              {activo ? <PowerOff /> : <Power />}
-            </IconAction>
-          </div>
-        )
-      },
-    },
-  ]
-}
-
 export function FamiliaresSheet({
   open,
   onOpenChange,
@@ -130,14 +74,7 @@ export function FamiliaresSheet({
     useFamiliares(titular.id)
   const cambiarEstado = useCambiarEstadoFamiliar()
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: data?.filas ?? [],
-    columns: getColumns(setAccion),
-    getCoreRowModel: getCoreRowModel(),
-    initialState: { pagination: { pageIndex: 0, pageSize: 3 } },
-  })
-
+  const filas = data?.filas ?? []
   const seleccionado = accion && accion.tipo !== 'crear' ? accion.row : null
   const activo = seleccionado?.estado === 'ACTIVO'
 
@@ -158,14 +95,76 @@ export function FamiliaresSheet({
             <Plus />
             Registrar familiar
           </Button>
-          <DataTable
-            table={table}
-            isLoading={isPending}
-            isFetching={isFetching}
-            error={isError ? getApiErrorMessage(error) : null}
-            onRetry={() => refetch()}
-            emptyMessage='Este empleado aún no tiene familiares registrados.'
-          />
+
+          {isPending ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className='h-20 w-full' />
+            ))
+          ) : isError ? (
+            <div className='flex flex-col items-center gap-2 rounded-md border border-dashed p-6 text-center'>
+              <p className='text-destructive'>{getApiErrorMessage(error)}</p>
+              <Button variant='outline' size='sm' onClick={() => refetch()}>
+                Reintentar
+              </Button>
+            </div>
+          ) : filas.length ? (
+            <ul
+              className={cn(
+                'overflow-hidden rounded-md border transition-opacity',
+                isFetching && 'opacity-60'
+              )}
+            >
+              {filas.map((f) => {
+                const estaActivo = f.estado === 'ACTIVO'
+                return (
+                  <li
+                    key={f.id}
+                    className='flex items-center justify-between gap-2 border-b border-dashed p-3 last:border-b-0'
+                  >
+                    <div className='min-w-0'>
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <span className='font-medium'>
+                          {getNombreCompleto(f.persona)}
+                        </span>
+                        <Badge
+                          variant='outline'
+                          className={estadoStyles[f.estado]}
+                        >
+                          {estaActivo ? 'Activo' : 'De baja'}
+                        </Badge>
+                      </div>
+                      <p className='text-sm text-muted-foreground'>
+                        {parentescoLabels[f.parentesco]} ·{' '}
+                        {f.persona.nroDocumento ?? 'Sin documento'}
+                      </p>
+                    </div>
+                    <div className='flex shrink-0'>
+                      <IconAction
+                        label='Editar'
+                        onClick={() => setAccion({ tipo: 'editar', row: f })}
+                      >
+                        <Pencil />
+                      </IconAction>
+                      <IconAction
+                        label={estaActivo ? 'Dar de baja' : 'Reactivar'}
+                        onClick={() => setAccion({ tipo: 'estado', row: f })}
+                      >
+                        {estaActivo ? (
+                          <PowerOff className='text-rose-700 dark:text-rose-400' />
+                        ) : (
+                          <Power className='text-teal-700 dark:text-teal-300' />
+                        )}
+                      </IconAction>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className='rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground'>
+              Este empleado aún no tiene familiares registrados.
+            </p>
+          )}
         </div>
       </SheetContent>
 

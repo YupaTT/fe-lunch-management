@@ -7,7 +7,7 @@ export function handleServerError(error: unknown) {
     console.log(error)
   }
 
-  let errMsg = 'Something went wrong!'
+  let errMsg = 'Ocurrió un error inesperado.'
 
   if (
     error &&
@@ -24,6 +24,8 @@ export function handleServerError(error: unknown) {
       errMsg = title
     } else if (typeof mensaje === 'string' && mensaje.length > 0) {
       errMsg = mensaje
+    } else if (!error.response) {
+      errMsg = 'No se pudo conectar con el servidor.'
     }
   }
 
