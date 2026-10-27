@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/card'
 import { Form } from '@/components/ui/form'
 import { Skeleton } from '@/components/ui/skeleton'
-import { InputField, SubmitButton } from '@/components/form-fields'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { InputField, SubmitButton, TimeField } from '@/components/form-fields'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
 import { PageHeader } from '@/components/layout/page-header'
@@ -67,27 +68,47 @@ function ConfiguracionFormCard({ data }: { data: ConfiguracionData }) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className='grid gap-4 sm:grid-cols-2'
+        className='flex flex-col gap-4'
         noValidate
       >
-        <InputField
-          control={form.control}
-          name='horaLimite'
-          label='Hora límite'
-          type='time'
-          description='Hasta esta hora del día anterior se puede reservar o cancelar.'
-        />
-        <InputField
-          control={form.control}
-          name='minimoPension'
-          label='Mínimo de almuerzos de la pensión'
-          type='number'
-          inputMode='numeric'
-          min={1}
-          step={1}
-          description='Cantidad mínima de almuerzos por mes.'
-        />
-        <div className='flex gap-2 sm:col-span-2'>
+        <Tabs defaultValue='reservas' className='gap-4'>
+          <TabsList>
+            <TabsTrigger value='reservas'>Reservas</TabsTrigger>
+            <TabsTrigger value='pension'>Pensión</TabsTrigger>
+          </TabsList>
+
+          {/* Se montan siempre para que la validación encuentre ambos campos. */}
+          <TabsContent
+            value='reservas'
+            forceMount
+            className='data-[state=inactive]:hidden'
+          >
+            <TimeField
+              control={form.control}
+              name='horaLimite'
+              label='Hora límite'
+              description='Hasta esta hora del día anterior se puede reservar o cancelar.'
+            />
+          </TabsContent>
+          <TabsContent
+            value='pension'
+            forceMount
+            className='data-[state=inactive]:hidden'
+          >
+            <InputField
+              control={form.control}
+              name='minimoPension'
+              label='Mínimo de almuerzos de la pensión'
+              type='number'
+              inputMode='numeric'
+              min={1}
+              step={1}
+              description='Cantidad mínima de almuerzos por mes.'
+            />
+          </TabsContent>
+        </Tabs>
+
+        <div className='flex gap-2'>
           <SubmitButton
             loading={actualizar.isPending}
             disabled={!form.formState.isDirty}
