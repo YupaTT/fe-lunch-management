@@ -1,8 +1,7 @@
 import React from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { ArrowRight, ChevronRight, Laptop, Moon, Sun } from 'lucide-react'
+import { ArrowRight, ChevronRight } from 'lucide-react'
 import { useSearch } from '@/context/search-provider'
-import { useTheme } from '@/context/theme-provider'
 import { useNavGroups } from '@/hooks/use-nav-groups'
 import {
   Command,
@@ -12,13 +11,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command'
 import { ScrollArea } from './ui/scroll-area'
 
 export function CommandMenu() {
   const navigate = useNavigate()
-  const { setTheme } = useTheme()
   const { open, setOpen } = useSearch()
   const navGroups = useNavGroups()
 
@@ -73,22 +70,6 @@ export function CommandMenu() {
                 })}
               </CommandGroup>
             ))}
-            <CommandSeparator />
-            <CommandGroup heading='Tema'>
-              <CommandItem onSelect={() => runCommand(() => setTheme('light'))}>
-                <Sun /> <span>Claro</span>
-              </CommandItem>
-              <CommandItem onSelect={() => runCommand(() => setTheme('dark'))}>
-                <Moon className='scale-90' />
-                <span>Oscuro</span>
-              </CommandItem>
-              <CommandItem
-                onSelect={() => runCommand(() => setTheme('system'))}
-              >
-                <Laptop />
-                <span>Sistema</span>
-              </CommandItem>
-            </CommandGroup>
           </ScrollArea>
         </CommandList>
       </Command>

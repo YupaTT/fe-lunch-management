@@ -7,7 +7,6 @@ const COMMAND_MENU_PLACEHOLDER = 'Buscar una página o comando...'
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
-  setTheme: vi.fn(),
   rol: 'ADMINISTRADOR',
 }))
 
@@ -27,10 +26,6 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     useNavigate: () => mocks.navigate,
   }
 })
-
-vi.mock('@/context/theme-provider', () => ({
-  useTheme: () => ({ setTheme: mocks.setTheme }),
-}))
 
 type ShortcutModifier = 'Control' | 'Meta'
 
@@ -80,10 +75,6 @@ describe('SearchProvider and CommandMenu', () => {
     await expect
       .element(getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
       .toBeInTheDocument()
-    await expect.element(getByText('Tema', { exact: true })).toBeInTheDocument()
-    await expect.element(getByText('Claro')).toBeInTheDocument()
-    await expect.element(getByText('Oscuro')).toBeInTheDocument()
-    await expect.element(getByText('Sistema')).toBeInTheDocument()
     await expect.element(getByText('Inicio')).toBeInTheDocument()
   })
 
@@ -140,19 +131,6 @@ describe('SearchProvider and CommandMenu', () => {
     await expect.element(screen.getByText('Empleados')).not.toBeInTheDocument()
     await expect
       .element(screen.getByText('Configuración'))
-      .not.toBeInTheDocument()
-  })
-
-  it('applies theme and closes the palette when a theme command is chosen', async () => {
-    const screen = await renderWithSearchProvider()
-
-    await openCommandPalette(screen)
-
-    await userEvent.click(screen.getByText('Oscuro'))
-
-    expect(mocks.setTheme).toHaveBeenCalledWith('dark')
-    await expect
-      .element(screen.getByPlaceholder(COMMAND_MENU_PLACEHOLDER))
       .not.toBeInTheDocument()
   })
 

@@ -1,4 +1,3 @@
-import { ConfigDrawer } from '@/components/config-drawer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
@@ -17,7 +16,6 @@ export function AppHeader({ fixed, className, children }: AppHeaderProps) {
       {children}
       <Search className={children ? undefined : 'me-auto'} />
       <ThemeSwitch />
-      <ConfigDrawer />
       <ProfileDropdown />
     </Header>
   )
