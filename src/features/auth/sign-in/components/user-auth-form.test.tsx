@@ -89,7 +89,7 @@ describe('UserAuthForm', () => {
 
     await vi.waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
-        to: '/cuenta/contrasena',
+        to: '/cambiar-contrasena',
         replace: true,
       })
     )

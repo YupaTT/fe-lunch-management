@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/api/client'
 import { getUserDisplayName } from '@/stores/auth-store'
@@ -58,7 +58,7 @@ export function UserAuthForm({
         toast.success(`Bienvenido, ${getUserDisplayName(user)}`)
         navigate({
           to: user.requiereCambioContrasena
-            ? '/cuenta/contrasena'
+            ? '/cambiar-contrasena'
             : redirectTo || '/',
           replace: true,
         })
@@ -104,12 +104,6 @@ export function UserAuthForm({
                 label='Contraseña'
                 autoComplete='current-password'
               />
-              <Link
-                to='/forgot-password'
-                className='-mt-4 justify-self-end text-sm text-muted-foreground underline-offset-4 hover:underline'
-              >
-                ¿Olvidó su contraseña?
-              </Link>
               <SubmitButton loading={login.isPending}>
                 Iniciar sesión
               </SubmitButton>

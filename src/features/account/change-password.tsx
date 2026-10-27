@@ -1,10 +1,7 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Card,
   CardContent,
@@ -43,11 +40,16 @@ const formSchema = z
 
 type ChangePasswordValues = z.infer<typeof formSchema>
 
-export function ChangePassword() {
-  const navigate = useNavigate()
-  const required = useAuthStore(
-    (state) => state.auth.user?.requiereCambioContrasena
-  )
+type PasswordChangeFormProps = {
+  // Con contraseña temporal el primer campo se llama "Contraseña temporal"
+  temporal?: boolean
+  onSuccess?: () => void
+}
+
+export function PasswordChangeForm({
+  temporal = false,
+  onSuccess,
+}: PasswordChangeFormProps) {
   const changePassword = useChangePassword()
 
   const form = useForm<ChangePasswordValues>({
@@ -69,12 +71,49 @@ export function ChangePassword() {
         onSuccess: () => {
           toast.success('Contraseña actualizada.')
           form.reset()
-          if (required) navigate({ to: '/', replace: true })
+          onSuccess?.()
         },
       }
     )
   }
 
+  return (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className='grid gap-4'
+        noValidate
+      >
+        <PasswordField
+          control={form.control}
+          name='contrasenaActual'
+          label={temporal ? 'Contraseña temporal' : 'Contraseña actual'}
+          autoComplete='current-password'
+        />
+        <PasswordField
+          control={form.control}
+          name='contrasenaNueva'
+          label='Nueva contraseña'
+          autoComplete='new-password'
+        />
+        <PasswordField
+          control={form.control}
+          name='confirmacion'
+          label='Confirmar nueva contraseña'
+          autoComplete='new-password'
+        />
+        <SubmitButton
+          className='justify-self-start'
+          loading={changePassword.isPending}
+        >
+          Guardar contraseña
+        </SubmitButton>
+      </form>
+    </Form>
+  )
+}
+
+export function ChangePassword() {
   return (
     <>
       <AppHeader fixed />
@@ -83,15 +122,6 @@ export function ChangePassword() {
           title='Cambiar contraseña'
           description='Use al menos 8 caracteres, con letras y números.'
         />
-        {required && (
-          <Alert className='max-w-xl'>
-            <AlertTitle>Debe definir una nueva contraseña</AlertTitle>
-            <AlertDescription>
-              Ingresó con una contraseña temporal. Cámbiela para continuar
-              usando el sistema.
-            </AlertDescription>
-          </Alert>
-        )}
         <Card className='max-w-xl'>
           <CardHeader>
             <CardTitle>Nueva contraseña</CardTitle>
@@ -100,38 +130,7 @@ export function ChangePassword() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className='grid gap-4'
-                noValidate
-              >
-                <PasswordField
-                  control={form.control}
-                  name='contrasenaActual'
-                  label={required ? 'Contraseña temporal' : 'Contraseña actual'}
-                  autoComplete='current-password'
-                />
-                <PasswordField
-                  control={form.control}
-                  name='contrasenaNueva'
-                  label='Nueva contraseña'
-                  autoComplete='new-password'
-                />
-                <PasswordField
-                  control={form.control}
-                  name='confirmacion'
-                  label='Confirmar nueva contraseña'
-                  autoComplete='new-password'
-                />
-                <SubmitButton
-                  className='justify-self-start'
-                  loading={changePassword.isPending}
-                >
-                  Guardar contraseña
-                </SubmitButton>
-              </form>
-            </Form>
+            <PasswordChangeForm />
           </CardContent>
         </Card>
       </Main>

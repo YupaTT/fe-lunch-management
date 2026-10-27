@@ -5,25 +5,11 @@ import { ChangePassword } from './change-password'
 
 const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),
-  navigate: vi.fn(),
-  required: false,
 }))
 
 vi.mock('@/features/auth/api', () => ({
   useChangePassword: () => ({ mutate: mocks.mutate, isPending: false }),
 }))
-
-vi.mock('@/stores/auth-store', () => ({
-  useAuthStore: (selector: (state: unknown) => unknown) =>
-    selector({
-      auth: { user: { requiereCambioContrasena: mocks.required } },
-    }),
-}))
-
-vi.mock('@tanstack/react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-router')>()
-  return { ...actual, useNavigate: () => mocks.navigate }
-})
 
 vi.mock('@/components/layout/app-header', () => ({ AppHeader: () => null }))
 
@@ -33,10 +19,7 @@ async function fillAndSubmit(
   confirmacion: string
 ) {
   const screen = await render(<ChangePassword />)
-  await userEvent.fill(
-    screen.getByLabelText(/^Contraseña (actual|temporal)$/),
-    actual
-  )
+  await userEvent.fill(screen.getByLabelText('Contraseña actual'), actual)
   await userEvent.fill(
     screen.getByLabelText('Nueva contraseña', { exact: true }),
     nueva
@@ -54,7 +37,6 @@ async function fillAndSubmit(
 describe('ChangePassword', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.required = false
   })
 
   it('rejects passwords without letters and numbers', async () => {
@@ -75,18 +57,14 @@ describe('ChangePassword', () => {
     expect(mocks.mutate).not.toHaveBeenCalled()
   })
 
-  it('submits a valid change and leaves the forced flow', async () => {
-    mocks.required = true
-    mocks.mutate.mockImplementation((_vars, opts) => opts?.onSuccess?.())
-    const screen = await fillAndSubmit('Temp1234', 'Nueva1234', 'Nueva1234')
+  it('submits a valid change', async () => {
+    await fillAndSubmit('actual123', 'Nueva1234', 'Nueva1234')
 
-    await expect
-      .element(screen.getByText('Debe definir una nueva contraseña'))
-      .toBeInTheDocument()
-    expect(mocks.mutate).toHaveBeenCalledWith(
-      { contrasenaActual: 'Temp1234', contrasenaNueva: 'Nueva1234' },
-      expect.any(Object)
+    await vi.waitFor(() =>
+      expect(mocks.mutate).toHaveBeenCalledWith(
+        { contrasenaActual: 'actual123', contrasenaNueva: 'Nueva1234' },
+        expect.any(Object)
+      )
     )
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/', replace: true })
   })
 })
