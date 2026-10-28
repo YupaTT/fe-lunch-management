@@ -4,6 +4,7 @@ import { api, type ApiResponse } from '@/api/client'
 export type Configuracion = {
   horaLimite: string
   minimoPension: number
+  precioPorDia: number
   precioPension: number
 }
 
@@ -25,9 +26,7 @@ export function useConfiguracion() {
 export function useActualizarConfiguracion() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (
-      payload: Pick<Configuracion, 'horaLimite' | 'minimoPension'>
-    ) => {
+    mutationFn: async (payload: Partial<Configuracion>) => {
       const { data } = await api.patch<ApiResponse<Configuracion>>(
         '/parametros/configuracion',
         payload

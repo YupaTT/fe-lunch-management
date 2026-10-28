@@ -25,6 +25,11 @@ import {
   useConfiguracion,
 } from './api'
 
+const precio = z
+  .string()
+  .regex(/^\d+(\.\d{1,2})?$/, 'Ingrese un monto válido (hasta 2 decimales).')
+  .refine((valor) => Number(valor) > 0, 'Debe ser mayor que cero.')
+
 const formSchema = z.object({
   horaLimite: z
     .string()
@@ -32,7 +37,18 @@ const formSchema = z.object({
   minimoPension: z
     .string()
     .regex(/^[1-9]\d*$/, 'Debe ser un número entero mayor que cero.'),
+  precioPorDia: precio,
+  precioPension: precio,
 })
+
+function aFormulario(data: ConfiguracionData): ConfiguracionForm {
+  return {
+    horaLimite: data.horaLimite,
+    minimoPension: String(data.minimoPension),
+    precioPorDia: String(data.precioPorDia),
+    precioPension: String(data.precioPension),
+  }
+}
 
 type ConfiguracionForm = z.infer<typeof formSchema>
 
@@ -40,10 +56,7 @@ function ConfiguracionFormCard({ data }: { data: ConfiguracionData }) {
   const actualizar = useActualizarConfiguracion()
   const form = useForm<ConfiguracionForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      horaLimite: data.horaLimite,
-      minimoPension: String(data.minimoPension),
-    },
+    defaultValues: aFormulario(data),
   })
 
   function onSubmit(values: ConfiguracionForm) {
@@ -51,14 +64,13 @@ function ConfiguracionFormCard({ data }: { data: ConfiguracionData }) {
       {
         horaLimite: values.horaLimite,
         minimoPension: Number(values.minimoPension),
+        precioPorDia: Number(values.precioPorDia),
+        precioPension: Number(values.precioPension),
       },
       {
         onSuccess: (saved) => {
           toast.success('Configuración actualizada.')
-          form.reset({
-            horaLimite: saved.horaLimite,
-            minimoPension: String(saved.minimoPension),
-          })
+          form.reset(aFormulario(saved))
         },
       }
     )
@@ -81,7 +93,7 @@ function ConfiguracionFormCard({ data }: { data: ConfiguracionData }) {
           <TabsContent
             value='reservas'
             forceMount
-            className='data-[state=inactive]:hidden'
+            className='grid gap-4 data-[state=inactive]:hidden sm:grid-cols-2'
           >
             <TimeField
               control={form.control}
@@ -89,11 +101,21 @@ function ConfiguracionFormCard({ data }: { data: ConfiguracionData }) {
               label='Hora límite'
               description='Hasta esta hora del día anterior se puede reservar o cancelar.'
             />
+            <InputField
+              control={form.control}
+              name='precioPorDia'
+              label='Precio por día (Bs)'
+              type='number'
+              inputMode='decimal'
+              min={0.01}
+              step={0.01}
+              description='Precio del almuerzo reservado por día.'
+            />
           </TabsContent>
           <TabsContent
             value='pension'
             forceMount
-            className='data-[state=inactive]:hidden'
+            className='grid gap-4 data-[state=inactive]:hidden sm:grid-cols-2'
           >
             <InputField
               control={form.control}
@@ -104,6 +126,16 @@ function ConfiguracionFormCard({ data }: { data: ConfiguracionData }) {
               min={1}
               step={1}
               description='Cantidad mínima de almuerzos por mes.'
+            />
+            <InputField
+              control={form.control}
+              name='precioPension'
+              label='Precio de pensión (Bs)'
+              type='number'
+              inputMode='decimal'
+              min={0.01}
+              step={0.01}
+              description='Precio de cada almuerzo bajo pensión.'
             />
           </TabsContent>
         </Tabs>
@@ -140,13 +172,13 @@ export function Configuracion() {
       <Main className='flex flex-col gap-6'>
         <PageHeader
           title='Configuración'
-          description='Reglas de reservas y pensión. Los cambios se aplican de inmediato.'
+          description='Reglas y precios de reservas y pensión. Los cambios se aplican de inmediato.'
         />
         <Card className='max-w-2xl'>
           <CardHeader>
             <CardTitle>Reservas y pensión</CardTitle>
             <CardDescription>
-              Valores iniciales: 21:00 y 10 almuerzos por mes.
+              Hora límite, mínimo de almuerzos y precios por día y de pensión.
             </CardDescription>
           </CardHeader>
           <CardContent>
