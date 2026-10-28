@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   ChartColumn,
+  CircleCheck,
   ClipboardCheck,
   KeyRound,
   LayoutDashboard,
@@ -33,9 +34,15 @@ export const sidebarData: SidebarData = {
       items: [
         { title: 'Inicio', url: '/', icon: LayoutDashboard },
         {
-          title: 'Mi pensión',
+          title: 'Pensión',
           url: '/pension',
           icon: Wallet,
+          roles: [Rol.EMPLEADO],
+        },
+        {
+          title: 'Mis asistencias',
+          url: '/asistencia',
+          icon: CircleCheck,
           roles: [Rol.EMPLEADO],
         },
       ],

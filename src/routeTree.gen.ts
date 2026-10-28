@@ -17,6 +17,7 @@ import { Route as AuthenticatedPensionRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMenuRouteImport } from './routes/_authenticated/menu'
 import { Route as AuthenticatedIngresosRouteImport } from './routes/_authenticated/ingresos'
 import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
+import { Route as AuthenticatedAsistenciaRouteImport } from './routes/_authenticated/asistencia'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
@@ -64,6 +65,11 @@ const AuthenticatedConfiguracionRoute =
     path: '/configuracion',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAsistenciaRoute = AuthenticatedAsistenciaRouteImport.update({
+  id: '/asistencia',
+  path: '/asistencia',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const errors500Route = errors500RouteImport.update({
   id: '/(errors)/500',
   path: '/500',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof authSignInRoute
   '/403': typeof errors403Route
   '/500': typeof errors500Route
+  '/asistencia': typeof AuthenticatedAsistenciaRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/ingresos': typeof AuthenticatedIngresosRoute
   '/menu': typeof AuthenticatedMenuRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInRoute
   '/403': typeof errors403Route
   '/500': typeof errors500Route
+  '/asistencia': typeof AuthenticatedAsistenciaRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/ingresos': typeof AuthenticatedIngresosRoute
   '/menu': typeof AuthenticatedMenuRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in': typeof authSignInRoute
   '/(errors)/403': typeof errors403Route
   '/(errors)/500': typeof errors500Route
+  '/_authenticated/asistencia': typeof AuthenticatedAsistenciaRoute
   '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
   '/_authenticated/ingresos': typeof AuthenticatedIngresosRoute
   '/_authenticated/menu': typeof AuthenticatedMenuRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/403'
     | '/500'
+    | '/asistencia'
     | '/configuracion'
     | '/ingresos'
     | '/menu'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/403'
     | '/500'
+    | '/asistencia'
     | '/configuracion'
     | '/ingresos'
     | '/menu'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in'
     | '/(errors)/403'
     | '/(errors)/500'
+    | '/_authenticated/asistencia'
     | '/_authenticated/configuracion'
     | '/_authenticated/ingresos'
     | '/_authenticated/menu'
@@ -258,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/asistencia': {
+      id: '/_authenticated/asistencia'
+      path: '/asistencia'
+      fullPath: '/asistencia'
+      preLoaderRoute: typeof AuthenticatedAsistenciaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/(errors)/500': {
       id: '/(errors)/500'
       path: '/500'
@@ -304,6 +323,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAsistenciaRoute: typeof AuthenticatedAsistenciaRoute
   AuthenticatedConfiguracionRoute: typeof AuthenticatedConfiguracionRoute
   AuthenticatedIngresosRoute: typeof AuthenticatedIngresosRoute
   AuthenticatedMenuRoute: typeof AuthenticatedMenuRoute
@@ -316,6 +336,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAsistenciaRoute: AuthenticatedAsistenciaRoute,
   AuthenticatedConfiguracionRoute: AuthenticatedConfiguracionRoute,
   AuthenticatedIngresosRoute: AuthenticatedIngresosRoute,
   AuthenticatedMenuRoute: AuthenticatedMenuRoute,

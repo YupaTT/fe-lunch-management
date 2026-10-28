@@ -5,9 +5,15 @@ import { type Beneficiario, type Reserva } from './schema'
 // El backend acepta como máximo 50 filas por página
 const LIMITE_RESERVAS = 50
 
-// Reservas del titular y de sus familiares en el rango, recorriendo páginas
-export function useReservas(desde: string, hasta: string) {
+// Reservas del titular y de sus familiares, recorriendo páginas.
+// Sin rango trae todas las reservas.
+export function useReservas<T = Reserva[]>(
+  desde?: string,
+  hasta?: string,
+  opciones: { select?: (filas: Reserva[]) => T } = {}
+) {
   return useQuery({
+    ...opciones,
     queryKey: ['reservas', desde, hasta],
     queryFn: async ({ signal }) => {
       const reservas = new Map<string, Reserva>()
@@ -16,7 +22,12 @@ export function useReservas(desde: string, hasta: string) {
         const { data } = await api.get<ApiResponse<ApiList<Reserva>>>(
           '/reservas',
           {
-            params: { desde, hasta, limite: LIMITE_RESERVAS, pagina },
+            params: {
+              desde: desde || undefined,
+              hasta: hasta || undefined,
+              limite: LIMITE_RESERVAS,
+              pagina,
+            },
             signal,
           }
         )

@@ -17,8 +17,11 @@ export type Reserva = {
   primerApellido: string | null
   segundoApellido: string | null
   parentesco: Parentesco | null
+  modalidad: 'POR_DIA' | 'PENSION'
   estado: EstadoReserva
   precio: string
+  // Hora de ingreso; el backend aún no la incluye en GET /reservas
+  fechaIngreso?: string | null
 }
 
 // Persona por la que el titular puede reservar: él mismo (parentesco null) o un familiar activo
