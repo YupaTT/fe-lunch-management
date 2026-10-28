@@ -27,12 +27,7 @@ import { Form } from '@/components/ui/form'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import {
-  InputField,
-  SelectField,
-  SubmitButton,
-  TextareaField,
-} from '@/components/form-fields'
+import { InputField, SelectField, SubmitButton } from '@/components/form-fields'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
 import { PageHeader } from '@/components/layout/page-header'
@@ -50,6 +45,8 @@ import {
   useMenus,
   usePublicarMenu,
 } from './api'
+import { esPlantillaVacia, limpiarMenu } from './markdown'
+import { MenuMarkdown, MenuMarkdownField } from './menu-markdown'
 import {
   estadoMenuLabels,
   motivoSinServicioLabels,
@@ -74,7 +71,10 @@ const formSchema = z
   })
   .superRefine(({ dias }, ctx) => {
     dias.forEach((dia, indice) => {
-      if (dia.estado === 'DISPONIBLE' && !dia.descripcion) {
+      if (
+        dia.estado === 'DISPONIBLE' &&
+        (!dia.descripcion || esPlantillaVacia(dia.descripcion))
+      ) {
         ctx.addIssue({
           code: 'custom',
           path: ['dias', indice, 'descripcion'],
@@ -109,7 +109,11 @@ function toDiaPublicar(
   dia: MenuForm['dias'][number]
 ): DiaPublicar {
   if (dia.estado === 'DISPONIBLE') {
-    return { fecha, estado: 'DISPONIBLE', descripcion: dia.descripcion }
+    return {
+      fecha,
+      estado: 'DISPONIBLE',
+      descripcion: limpiarMenu(dia.descripcion),
+    }
   }
   const motivo = dia.motivoSinServicio as MotivoSinServicio
   return {
@@ -151,13 +155,12 @@ function DiaPublicarFields({
         ]}
       />
       {estado === 'DISPONIBLE' ? (
-        <TextareaField
+        <MenuMarkdownField
           control={control}
           name={`dias.${indice}.descripcion`}
           label='Menú'
           placeholder='Ej.: Sopa de verduras, arroz, pollo al horno y jugo'
           className='sm:col-span-2'
-          rows={2}
         />
       ) : (
         <SelectField
@@ -291,7 +294,10 @@ const descripcionSchema = z.object({
     .string()
     .trim()
     .min(1, 'Ingrese la descripción del menú.')
-    .max(500, 'Máximo 500 caracteres.'),
+    .max(500, 'Máximo 500 caracteres.')
+    .refine((texto) => !esPlantillaVacia(texto), {
+      message: 'Ingrese la descripción del menú.',
+    }),
 })
 
 function EditarDescripcion({
@@ -311,7 +317,7 @@ function EditarDescripcion({
 
   function onSubmit(values: z.infer<typeof descripcionSchema>) {
     actualizar.mutate(
-      { id, descripcion: values.descripcion },
+      { id, descripcion: limpiarMenu(values.descripcion) },
       {
         onSuccess: () => {
           toast.success('Descripción actualizada.')
@@ -344,11 +350,10 @@ function EditarDescripcion({
                 </AlertDescription>
               </Alert>
             )}
-            <TextareaField
+            <MenuMarkdownField
               control={form.control}
               name='descripcion'
               label='Menú'
-              rows={3}
             />
           </form>
         </Form>
@@ -406,9 +411,13 @@ function SemanaPublicada({
                   <Badge variant='secondary'>Cerrado</Badge>
                 )}
               </div>
-              <p className='text-sm text-muted-foreground'>
-                {descripcionDia(dia)}
-              </p>
+              {dia.estado === 'DISPONIBLE' ? (
+                <MenuMarkdown texto={dia.descripcion ?? ''} />
+              ) : (
+                <p className='text-sm text-muted-foreground'>
+                  {descripcionDia(dia)}
+                </p>
+              )}
             </div>
             {dia.id && dia.estado === 'DISPONIBLE' && dia.reservable && (
               <Button

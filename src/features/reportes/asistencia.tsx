@@ -31,6 +31,7 @@ import {
 } from '@/components/data-table'
 import { formatearFecha } from '@/features/dashboard/fechas'
 import { KpiCard } from '@/features/dashboard/kpi'
+import { textoPlano } from '@/features/menu/markdown'
 import {
   estadoMenuLabels,
   motivoSinServicioLabels,
@@ -78,7 +79,7 @@ function columnasConteo<T extends Modalidades<Conteo>>(): ColumnDef<T>[] {
 }
 
 function descripcionDia(dia: DiaAsistencia) {
-  if (dia.estado !== 'SIN_SERVICIO') return dia.descripcion ?? ''
+  if (dia.estado !== 'SIN_SERVICIO') return textoPlano(dia.descripcion ?? '')
   const motivo = dia.motivoSinServicio
     ? motivoSinServicioLabels[dia.motivoSinServicio]
     : 'Sin servicio'

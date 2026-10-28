@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog'
 import { parentescoLabels } from '@/features/familiares/schema'
 import { useMenus } from '@/features/menu/api'
+import { MenuMarkdown } from '@/features/menu/menu-markdown'
 import {
   type EstadoMenu,
   estadoMenuLabels,
@@ -317,6 +318,9 @@ function DetalleDia({
                 })}
               </DialogTitle>
               <DialogDescription>{descripcionMenu(menu)}</DialogDescription>
+              {menu?.estado === 'DISPONIBLE' && menu.descripcion && (
+                <MenuMarkdown texto={menu.descripcion} />
+              )}
             </DialogHeader>
 
             {cargandoBeneficiarios ? (
@@ -393,10 +397,9 @@ function DetalleDia({
 function descripcionMenu(menu?: MenuDia) {
   if (!menu) return 'No hay información de menú para este día.'
   if (menu.estado === 'DISPONIBLE') {
-    const descripcion = menu.descripcion ?? 'Servicio disponible.'
     return menu.reservable === false
-      ? `${descripcion} Ya no se puede reservar ni cancelar este día.`
-      : descripcion
+      ? 'Servicio disponible. Ya no se puede reservar ni cancelar este día.'
+      : 'Servicio disponible.'
   }
   if (menu.estado === 'SIN_SERVICIO') {
     return menu.detalleMotivo ?? 'Sin servicio ese día.'
