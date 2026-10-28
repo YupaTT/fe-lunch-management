@@ -1,34 +1,25 @@
 import { Fragment, useState } from 'react'
-import { toast } from 'sonner'
+import { CalendarClock, Plus, Wallet } from 'lucide-react'
 import { getApiErrorMessage } from '@/api/client'
 import { formatearMonto } from '@/lib/moneda'
 import { getNombreCompleto } from '@/lib/persona'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { ConfirmDialog } from '@/components/confirm-dialog'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
 import { PageHeader } from '@/components/layout/page-header'
-import { hoyBolivia, mesDe } from '@/features/dashboard/fechas'
-import { useActivarPension, usePensionHogar } from './api'
+import { desplazarMes, hoyBolivia, mesDe } from '@/features/dashboard/fechas'
+import { KpiCard } from '@/features/dashboard/kpi'
+import { usePensionHogar } from './api'
+import { ActivarPensionDialog } from './components/activar-pension-dialog'
 import { DetallePension } from './components/detalle-pension'
 import { EstadoPension } from './components/estado-pension'
-import { SelectorMes } from './components/selector-mes'
+import { HistorialPension } from './components/historial-pension'
 import {
   esActivable,
   formatearCierre,
@@ -76,24 +67,104 @@ function ReglasPension({ datos }: { datos: PensionHogar }) {
   )
 }
 
+// Texto que explica en una línea la situación de la persona
+function situacion(persona: PersonaHogar) {
+  const { pension } = persona
+  if (!pension) return 'Nunca tuvo pensión.'
+  const desde = formatearMes(pension.mesInicio)
+  if (pension.estado === 'PROGRAMADA') return `Empieza en ${desde}.`
+  if (pension.estado === 'ACTIVA') return `Activa desde ${desde}.`
+  if (pension.mesFin && pension.mesFin < pension.mesInicio) {
+    return 'Se canceló antes de empezar.'
+  }
+  const hasta = pension.mesFin ? formatearMes(pension.mesFin) : ''
+  if (pension.estado === 'POR_TERMINAR') return `Último mes: ${hasta}.`
+  return `Tuvo pensión de ${desde} a ${hasta}.`
+}
+
+function TarjetaPersona({
+  persona,
+  onVer,
+  onActivar,
+}: {
+  persona: PersonaHogar
+  onVer: () => void
+  onActivar: () => void
+}) {
+  const { pension } = persona
+  return (
+    <div className='flex flex-col gap-3 rounded-xl border p-4'>
+      <div className='flex items-start justify-between gap-2'>
+        <div className='min-w-0'>
+          <p className='truncate font-medium'>{getNombreCompleto(persona)}</p>
+          <p className='text-xs text-muted-foreground'>
+            {parentescoDe(persona)}
+          </p>
+        </div>
+        <EstadoPension estado={pension?.estado} />
+      </div>
+      <dl className='grid grid-cols-2 gap-x-3 gap-y-1 text-sm'>
+        <dt className='text-muted-foreground'>Vigencia</dt>
+        <dd className='text-nowrap'>{pension ? vigencia(pension) : '—'}</dd>
+        <dt className='text-muted-foreground'>Este mes</dt>
+        <dd className='tabular-nums'>
+          {persona.comprometidos} almuerzos · {formatearMonto(persona.monto)}
+        </dd>
+      </dl>
+      <p className='text-sm text-muted-foreground first-letter:uppercase'>
+        {situacion(persona)}
+      </p>
+      <div className='mt-auto flex gap-2'>
+        {pension && (
+          <Button variant='outline' size='sm' onClick={onVer}>
+            Ver días
+          </Button>
+        )}
+        {esActivable(pension) && (
+          <Button size='sm' onClick={onActivar}>
+            {pension ? 'Renovar' : 'Registrar'}
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function MiPension() {
-  const [mes, setMes] = useState(() => mesDe(hoyBolivia()))
-  const hogar = usePensionHogar(mes)
-  const activar = useActivarPension()
-  const [aActivar, setAActivar] = useState<PersonaHogar | null>(null)
+  const mesActual = mesDe(hoyBolivia())
+  const hogar = usePensionHogar(mesActual)
+  const proximo = usePensionHogar(desplazarMes(mesActual, 1))
+  // undefined: diálogo cerrado; null: abierto sin persona preseleccionada
+  const [aActivar, setAActivar] = useState<PersonaHogar | null | undefined>()
   const [idDetalle, setIdDetalle] = useState<string | null>(null)
+  const [mesDetalle, setMesDetalle] = useState(mesActual)
+  const hogarDetalle = usePensionHogar(mesDetalle, undefined, !!idDetalle)
 
   const datos = hogar.data
   const personas = datos?.personas ?? []
-  const detalle = personas.find((p) => p.idPersona === idDetalle)
+  const hayActivables = personas.some((p) => esActivable(p.pension))
+  const detalle = hogarDetalle.data?.personas.find(
+    (p) => p.idPersona === idDetalle
+  )
 
   return (
     <>
       <AppHeader fixed />
-      <Main className='flex flex-col gap-4'>
+      <Main className='flex flex-col gap-6'>
         <PageHeader
-          title='Mi pensión'
-          actions={<SelectorMes mes={mes} onCambiar={setMes} />}
+          title='Pensión'
+          description='Gestiona las pensiones mensuales.'
+          actions={
+            datos && (
+              <Button
+                disabled={!hayActivables}
+                onClick={() => setAActivar(null)}
+              >
+                <Plus />
+                Registrar pensión
+              </Button>
+            )
+          }
         />
         {datos && <ReglasPension datos={datos} />}
 
@@ -109,130 +180,71 @@ export function MiPension() {
             </Button>
           </div>
         ) : (
-          <div
-            className={cn(
-              'overflow-hidden rounded-md border transition-opacity',
-              hogar.isPlaceholderData && 'opacity-60'
-            )}
-          >
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Persona</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Vigencia</TableHead>
-                  <TableHead className='text-right'>Almuerzos</TableHead>
-                  <TableHead className='text-right'>Monto</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {personas.map((persona) => {
-                  const { pension } = persona
-                  return (
-                    <TableRow
-                      key={persona.idPersona}
-                      className={cn(pension && 'cursor-pointer')}
-                      onClick={() => pension && setIdDetalle(persona.idPersona)}
-                    >
-                      <TableCell>
-                        <p className='font-medium'>
-                          {getNombreCompleto(persona)}
-                        </p>
-                        <p className='text-xs text-muted-foreground'>
-                          {parentescoDe(persona)}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <EstadoPension estado={pension?.estado} />
-                      </TableCell>
-                      <TableCell className='text-nowrap'>
-                        {pension ? vigencia(pension) : '—'}
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {persona.comprometidos}
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>
-                        {formatearMonto(persona.monto)}
-                      </TableCell>
-                      <TableCell className='space-x-2 text-right text-nowrap'>
-                        {pension && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            aria-label={`Ver pensión de ${getNombreCompleto(persona)}`}
-                          >
-                            Ver
-                          </Button>
-                        )}
-                        {esActivable(pension) && (
-                          <Button
-                            size='sm'
-                            aria-label={`Activar pensión de ${getNombreCompleto(persona)}`}
-                            onClick={(evento) => {
-                              evento.stopPropagation()
-                              setAActivar(persona)
-                            }}
-                          >
-                            Activar
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={4}>Total del mes</TableCell>
-                  <TableCell className='text-right tabular-nums'>
-                    {formatearMonto(datos?.total ?? 0)}
-                  </TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </div>
+          <>
+            <div className='grid grid-cols-2 gap-3 sm:gap-4'>
+              <KpiCard
+                titulo='Descuento de este mes'
+                icon={Wallet}
+                valor={formatearMonto(datos?.total ?? 0)}
+                detalle={formatearMes(`${mesActual}-01`)}
+              />
+              <KpiCard
+                titulo='Próximo mes'
+                icon={CalendarClock}
+                cargando={proximo.isPending}
+                valor={formatearMonto(proximo.data?.total ?? 0)}
+                detalle={formatearMes(`${desplazarMes(mesActual, 1)}-01`)}
+              />
+            </div>
+
+            <section className='flex flex-col gap-3'>
+              <h2 className='font-semibold'>Personas de mi hogar</h2>
+              <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                {personas.map((persona) => (
+                  <TarjetaPersona
+                    key={persona.idPersona}
+                    persona={persona}
+                    onVer={() => {
+                      setMesDetalle(mesActual)
+                      setIdDetalle(persona.idPersona)
+                    }}
+                    onActivar={() => setAActivar(persona)}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <HistorialPension />
+          </>
         )}
       </Main>
 
-      {detalle?.pension && datos && (
+      {idDetalle && (
         <DetallePension
-          titulo={getNombreCompleto(detalle)}
-          subtitulo={parentescoDe(detalle)}
-          mes={mes}
-          onCambiarMes={setMes}
-          datos={{ ...detalle, pension: detalle.pension }}
-          cargando={false}
-          actualizando={hogar.isPlaceholderData}
-          error={null}
-          onReintentar={() => hogar.refetch()}
-          finSiCancela={datos.finSiCancela}
-          minimo={datos.minimo}
+          titulo={detalle ? getNombreCompleto(detalle) : 'Pensión'}
+          subtitulo={detalle ? parentescoDe(detalle) : ''}
+          mes={mesDetalle}
+          onCambiarMes={setMesDetalle}
+          datos={
+            detalle?.pension
+              ? { ...detalle, pension: detalle.pension }
+              : undefined
+          }
+          cargando={hogarDetalle.isPending}
+          actualizando={hogarDetalle.isPlaceholderData}
+          error={hogarDetalle.error}
+          onReintentar={() => hogarDetalle.refetch()}
+          finSiCancela={hogarDetalle.data?.finSiCancela}
+          minimo={hogarDetalle.data?.minimo}
           onCerrar={() => setIdDetalle(null)}
         />
       )}
 
-      {aActivar && datos && (
-        <ConfirmDialog
-          open
-          onOpenChange={() => setAActivar(null)}
-          title='Activar pensión'
-          desc={`La pensión de ${getNombreCompleto(aActivar)} empieza en ${formatearMes(datos.inicioSiActiva)}.`}
-          confirmText='Activar'
-          cancelBtnText='Volver'
-          isLoading={activar.isPending}
-          handleConfirm={() =>
-            activar.mutate(
-              { idPersona: aActivar.idPersona },
-              {
-                onSuccess: () => {
-                  toast.success('Pensión activada.')
-                  setAActivar(null)
-                },
-              }
-            )
-          }
+      {aActivar !== undefined && datos && (
+        <ActivarPensionDialog
+          datos={datos}
+          inicial={aActivar}
+          onOpenChange={(open) => !open && setAActivar(undefined)}
         />
       )}
     </>

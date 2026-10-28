@@ -77,7 +77,13 @@ function usePensionMutation<TVars, TData>(
 
 export function useActivarPension() {
   return usePensionMutation(
-    (body: { idPersona: string; idUsuarioTitular?: string }) =>
+    (body: {
+      idPersona: string
+      idUsuarioTitular?: string
+      // YYYY-MM-DD, primer día del mes. Sin mesFin queda abierta hasta cancelar.
+      mesInicio?: string
+      mesFin?: string
+    }) =>
       api.post<ApiResponse<{ mesInicio: string }>>(
         '/pensiones/suscripciones',
         body
