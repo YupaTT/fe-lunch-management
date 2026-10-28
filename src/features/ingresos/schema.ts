@@ -26,6 +26,8 @@ export type ListaIngreso = {
   faltan: { total: number; filas: Ingreso[] }
 }
 
+export type CierreDia = { fecha: string; noAsistieron: number }
+
 export const modalidadLabels: Record<Ingreso['modalidad'], string> = {
   POR_DIA: 'Por día',
   PENSION: 'Pensión',

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type ApiResponse } from '@/api/client'
-import { type ListaIngreso } from './schema'
+import { type CierreDia, type ListaIngreso } from './schema'
 
 export function useListaIngreso(fecha: string) {
   return useQuery({
@@ -29,4 +29,16 @@ export function useRegistrarIngreso() {
 
 export function useAnularIngreso() {
   return useCambiarIngreso('anulacion')
+}
+
+export function useCerrarDia() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } =
+        await api.patch<ApiResponse<CierreDia>>('/ingresos/cierre')
+      return data.datos
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ingresos'] }),
+  })
 }

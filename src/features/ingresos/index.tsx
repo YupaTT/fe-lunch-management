@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { type ColumnDef } from '@tanstack/react-table'
 import {
   CalendarCheck,
   CircleCheck,
-  Search,
+  Lock,
   Undo2,
   UsersRound,
 } from 'lucide-react'
@@ -10,58 +11,38 @@ import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/api/client'
 import { getNombreCompleto } from '@/lib/persona'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
 import { PageHeader } from '@/components/layout/page-header'
-import { formatearFecha, hoyBolivia } from '@/features/dashboard/fechas'
+import { Rol, useHasRole } from '@/features/auth/roles'
+import {
+  ZONA_BOLIVIA,
+  formatearFecha,
+  hoyBolivia,
+} from '@/features/dashboard/fechas'
 import { KpiCard } from '@/features/dashboard/kpi'
-import { parentescoLabels } from '@/features/familiares/schema'
-import { useAnularIngreso, useListaIngreso, useRegistrarIngreso } from './api'
-import { type Ingreso, modalidadLabels } from './schema'
+import { estadoReservaLabels } from '@/features/reservas/schema'
+import {
+  useAnularIngreso,
+  useCerrarDia,
+  useListaIngreso,
+  useRegistrarIngreso,
+} from './api'
+import { columnasBase } from './columns'
+import { type Ingreso } from './schema'
+import { TablaIngresos } from './tabla-ingresos'
 
 function horaDeIngreso(fechaIngreso: string) {
   return new Date(fechaIngreso).toLocaleTimeString('es-BO', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/La_Paz',
+    timeZone: ZONA_BOLIVIA,
   })
-}
-
-function FilaIngreso({
-  ingreso,
-  children,
-}: {
-  ingreso: Ingreso
-  children: React.ReactNode
-}) {
-  const relacion = ingreso.parentesco
-    ? `${parentescoLabels[ingreso.parentesco]} de ${getNombreCompleto(ingreso.titular)}`
-    : 'Titular'
-
-  return (
-    <li className='flex items-center justify-between gap-3 border-b border-dashed p-3 last:border-b-0'>
-      <div className='min-w-0'>
-        <p className='font-medium'>{getNombreCompleto(ingreso)}</p>
-        <p className='text-sm text-muted-foreground'>
-          {relacion} · {modalidadLabels[ingreso.modalidad]}
-        </p>
-      </div>
-      <div className='flex shrink-0 items-center gap-2'>{children}</div>
-    </li>
-  )
-}
-
-function ListaVacia({ texto }: { texto: string }) {
-  return (
-    <p className='rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground'>
-      {texto}
-    </p>
-  )
 }
 
 export function ListaIngreso() {
@@ -69,14 +50,12 @@ export function ListaIngreso() {
   const lista = useListaIngreso(hoy)
   const registrar = useRegistrarIngreso()
   const anular = useAnularIngreso()
-  const [busqueda, setBusqueda] = useState('')
+  const cerrar = useCerrarDia()
+  const puedeCerrar = useHasRole(Rol.ADMINISTRADOR, Rol.ENCARGADO)
   const [aAnular, setAAnular] = useState<Ingreso | null>(null)
-
-  const termino = busqueda.trim().toLowerCase()
-  const filtrar = (filas: Ingreso[]) =>
-    filas.filter((ingreso) =>
-      getNombreCompleto(ingreso).toLowerCase().includes(termino)
-    )
+  const [confirmarCierre, setConfirmarCierre] = useState(false)
+  const pendientes =
+    lista.data?.faltan.filas.filter((f) => f.estado === 'RESERVADO').length ?? 0
 
   function registrarIngreso(ingreso: Ingreso) {
     registrar.mutate(ingreso.id, {
@@ -95,6 +74,93 @@ export function ListaIngreso() {
     })
   }
 
+  function cerrarDia() {
+    cerrar.mutate(undefined, {
+      onSuccess: ({ noAsistieron }) => {
+        toast.success(
+          noAsistieron
+            ? `Día cerrado. ${noAsistieron} persona(s) marcadas como No asistió.`
+            : 'Día cerrado. No había personas pendientes.'
+        )
+        setConfirmarCierre(false)
+      },
+    })
+  }
+
+  const registrandoId = registrar.isPending ? registrar.variables : undefined
+
+  const columnasFaltan = useMemo<ColumnDef<Ingreso>[]>(
+    () => [
+      ...columnasBase,
+      {
+        accessorKey: 'estado',
+        header: 'Estado',
+        cell: ({ row }) => (
+          <Badge
+            variant='outline'
+            className={
+              row.original.estado === 'NO_ASISTIO'
+                ? 'border-destructive text-destructive'
+                : ''
+            }
+          >
+            {estadoReservaLabels[row.original.estado]}
+          </Badge>
+        ),
+        enableGlobalFilter: false,
+        meta: { label: 'Estado' },
+      },
+      {
+        id: 'accion',
+        cell: ({ row }) =>
+          row.original.estado === 'RESERVADO' && (
+            <Button
+              size='sm'
+              disabled={registrandoId === row.original.id}
+              onClick={() => registrarIngreso(row.original)}
+            >
+              <CircleCheck />
+              Registrar ingreso
+            </Button>
+          ),
+        enableHiding: false,
+        meta: { className: 'w-0 text-right' },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [registrandoId]
+  )
+
+  const columnasIngresaron = useMemo<ColumnDef<Ingreso>[]>(
+    () => [
+      ...columnasBase,
+      {
+        accessorKey: 'fechaIngreso',
+        header: 'Hora de ingreso',
+        cell: ({ row }) =>
+          row.original.fechaIngreso && horaDeIngreso(row.original.fechaIngreso),
+        enableGlobalFilter: false,
+        meta: { label: 'Hora de ingreso', className: 'tabular-nums' },
+      },
+      {
+        id: 'accion',
+        cell: ({ row }) => (
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setAAnular(row.original)}
+          >
+            <Undo2 />
+            Anular
+          </Button>
+        ),
+        enableHiding: false,
+        meta: { className: 'w-0 text-right' },
+      },
+    ],
+    []
+  )
+
   return (
     <>
       <AppHeader fixed />
@@ -107,6 +173,19 @@ export function ListaIngreso() {
             month: 'long',
             year: 'numeric',
           })}
+          actions={
+            puedeCerrar &&
+            lista.isSuccess && (
+              <Button
+                variant='outline'
+                disabled={pendientes === 0}
+                onClick={() => setConfirmarCierre(true)}
+              >
+                <Lock />
+                Cerrar día
+              </Button>
+            )
+          }
         />
 
         {lista.isPending ? (
@@ -145,49 +224,46 @@ export function ListaIngreso() {
             </div>
 
             <Tabs defaultValue='faltan' className='gap-4'>
-              <div className='flex flex-wrap items-center justify-between gap-2'>
-                <TabsList>
-                  <TabsTrigger value='faltan'>
-                    Faltan ({lista.data.faltan.total})
-                  </TabsTrigger>
-                  <TabsTrigger value='ingresaron'>
-                    Ingresaron ({lista.data.ingresaron.total})
-                  </TabsTrigger>
-                </TabsList>
-                <div className='relative w-full sm:max-w-xs'>
-                  <Search className='absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground' />
-                  <Input
-                    className='pl-8'
-                    placeholder='Buscar por nombre'
-                    aria-label='Buscar por nombre'
-                    value={busqueda}
-                    onChange={(evento) => setBusqueda(evento.target.value)}
-                  />
-                </div>
-              </div>
-
+              <TabsList>
+                <TabsTrigger value='faltan'>
+                  Faltan ({lista.data.faltan.total})
+                </TabsTrigger>
+                <TabsTrigger value='ingresaron'>
+                  Ingresaron ({lista.data.ingresaron.total})
+                </TabsTrigger>
+              </TabsList>
               <TabsContent value='faltan'>
-                <FilasFaltantes
-                  filas={filtrar(lista.data.faltan.filas)}
-                  hayFaltantes={lista.data.faltan.total > 0}
-                  registrandoId={
-                    registrar.isPending ? registrar.variables : undefined
-                  }
-                  onRegistrar={registrarIngreso}
+                <TablaIngresos
+                  filas={lista.data.faltan.filas}
+                  columnas={columnasFaltan}
+                  isFetching={lista.isFetching}
+                  emptyMessage='Todas las raciones de hoy registraron ingreso.'
                 />
               </TabsContent>
-
               <TabsContent value='ingresaron'>
-                <FilasIngresaron
-                  filas={filtrar(lista.data.ingresaron.filas)}
-                  hayIngresos={lista.data.ingresaron.total > 0}
-                  onAnular={setAAnular}
+                <TablaIngresos
+                  filas={lista.data.ingresaron.filas}
+                  columnas={columnasIngresaron}
+                  isFetching={lista.isFetching}
+                  emptyMessage='Todavía no se registró ningún ingreso hoy.'
                 />
               </TabsContent>
             </Tabs>
           </>
         )}
       </Main>
+
+      <ConfirmDialog
+        open={confirmarCierre}
+        onOpenChange={setConfirmarCierre}
+        title='Cerrar día'
+        desc={`Se marcarán como No asistió las ${pendientes} persona(s) que faltan. Esta acción no se puede deshacer. ¿Cerrar el día?`}
+        confirmText='Cerrar día'
+        cancelBtnText='Cancelar'
+        destructive
+        isLoading={cerrar.isPending}
+        handleConfirm={cerrarDia}
+      />
 
       {aAnular && (
         <ConfirmDialog
@@ -203,84 +279,5 @@ export function ListaIngreso() {
         />
       )}
     </>
-  )
-}
-
-function FilasFaltantes({
-  filas,
-  hayFaltantes,
-  registrandoId,
-  onRegistrar,
-}: {
-  filas: Ingreso[]
-  hayFaltantes: boolean
-  registrandoId?: string
-  onRegistrar: (ingreso: Ingreso) => void
-}) {
-  if (!filas.length) {
-    return (
-      <ListaVacia
-        texto={
-          hayFaltantes
-            ? 'No hay personas con ese nombre pendientes de ingreso.'
-            : 'Todas las raciones de hoy registraron ingreso.'
-        }
-      />
-    )
-  }
-  return (
-    <ul className='overflow-hidden rounded-md border'>
-      {filas.map((ingreso) => (
-        <FilaIngreso key={ingreso.id} ingreso={ingreso}>
-          <Button
-            size='sm'
-            disabled={registrandoId === ingreso.id}
-            onClick={() => onRegistrar(ingreso)}
-          >
-            <CircleCheck />
-            Registrar ingreso
-          </Button>
-        </FilaIngreso>
-      ))}
-    </ul>
-  )
-}
-
-function FilasIngresaron({
-  filas,
-  hayIngresos,
-  onAnular,
-}: {
-  filas: Ingreso[]
-  hayIngresos: boolean
-  onAnular: (ingreso: Ingreso) => void
-}) {
-  if (!filas.length) {
-    return (
-      <ListaVacia
-        texto={
-          hayIngresos
-            ? 'No hay personas con ese nombre que hayan ingresado.'
-            : 'Todavía no se registró ningún ingreso hoy.'
-        }
-      />
-    )
-  }
-  return (
-    <ul className='overflow-hidden rounded-md border'>
-      {filas.map((ingreso) => (
-        <FilaIngreso key={ingreso.id} ingreso={ingreso}>
-          {ingreso.fechaIngreso && (
-            <span className='text-sm text-muted-foreground'>
-              {horaDeIngreso(ingreso.fechaIngreso)}
-            </span>
-          )}
-          <Button variant='outline' size='sm' onClick={() => onAnular(ingreso)}>
-            <Undo2 />
-            Anular
-          </Button>
-        </FilaIngreso>
-      ))}
-    </ul>
   )
 }
