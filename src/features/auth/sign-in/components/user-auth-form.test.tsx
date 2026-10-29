@@ -38,8 +38,8 @@ describe('UserAuthForm', () => {
   let contrasenaInput: Locator
   let submitButton: Locator
 
-  async function setup(redirectTo?: string) {
-    screen = await render(<UserAuthForm redirectTo={redirectTo} />)
+  async function setup() {
+    screen = await render(<UserAuthForm />)
     correoInput = screen.getByRole('textbox', { name: /^Correo electrónico$/i })
     contrasenaInput = screen.getByLabelText(/^Contraseña$/i)
     submitButton = screen.getByRole('button', { name: /^Iniciar sesión$/i })
@@ -82,7 +82,7 @@ describe('UserAuthForm', () => {
     mutate.mockImplementation((_data, opts) =>
       opts?.onSuccess?.({ ...user, requiereCambioContrasena: true })
     )
-    await setup('/users')
+    await setup()
     await userEvent.fill(correoInput, 'juan.perez@unionbo.com')
     await userEvent.fill(contrasenaInput, 'Temporal123')
     await userEvent.click(submitButton)
@@ -92,17 +92,6 @@ describe('UserAuthForm', () => {
         to: '/cambiar-contrasena',
         replace: true,
       })
-    )
-  })
-
-  it('navigates to redirectTo when provided', async () => {
-    await setup('/users')
-    await userEvent.fill(correoInput, 'juan.perez@unionbo.com')
-    await userEvent.fill(contrasenaInput, '123')
-    await userEvent.click(submitButton)
-
-    await vi.waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({ to: '/users', replace: true })
     )
   })
 })

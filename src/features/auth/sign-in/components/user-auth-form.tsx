@@ -32,15 +32,10 @@ const formSchema = z.object({
   contrasena: z.string().min(1, 'Ingrese su contraseña.'),
 })
 
-interface UserAuthFormProps extends React.ComponentProps<'div'> {
-  redirectTo?: string
-}
-
 export function UserAuthForm({
   className,
-  redirectTo,
   ...props
-}: UserAuthFormProps) {
+}: React.ComponentProps<'div'>) {
   const navigate = useNavigate()
   const login = useLogin()
 
@@ -57,9 +52,7 @@ export function UserAuthForm({
       onSuccess: (user) => {
         toast.success(`Bienvenido, ${getUserDisplayName(user)}`)
         navigate({
-          to: user.requiereCambioContrasena
-            ? '/cambiar-contrasena'
-            : redirectTo || '/',
+          to: user.requiereCambioContrasena ? '/cambiar-contrasena' : '/',
           replace: true,
         })
       },

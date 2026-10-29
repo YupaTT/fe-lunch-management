@@ -6,8 +6,6 @@ import { SignOutDialog } from './sign-out-dialog'
 const navigate = vi.fn()
 const mutate = vi.fn((_vars, opts) => opts?.onSettled?.())
 
-const MOCK_HREF = 'https://app.test/dashboard?tab=1'
-
 vi.mock('@/features/auth/api', () => ({
   useLogout: () => ({ mutate, isPending: false }),
 }))
@@ -17,7 +15,6 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => navigate,
-    useLocation: () => ({ href: MOCK_HREF }),
   }
 })
 
@@ -26,7 +23,7 @@ describe('SignOutDialog', () => {
     vi.clearAllMocks()
   })
 
-  it('calls logout and navigates to sign-in with current location as redirect', async () => {
+  it('calls logout and navigates to sign-in without redirect', async () => {
     const { getByRole } = await render(
       <SignOutDialog open onOpenChange={vi.fn()} />
     )
@@ -36,7 +33,6 @@ describe('SignOutDialog', () => {
     expect(mutate).toHaveBeenCalledOnce()
     expect(navigate).toHaveBeenCalledWith({
       to: '/sign-in',
-      search: { redirect: MOCK_HREF },
       replace: true,
     })
   })

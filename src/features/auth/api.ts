@@ -19,6 +19,7 @@ const encodePassword = (value: string) => btoa(encodeURI(value))
 
 export function useLogin() {
   const { auth } = useAuthStore()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async ({ correoElectronico, contrasena }: LoginInput) => {
@@ -29,6 +30,7 @@ export function useLogin() {
       return data.datos
     },
     onSuccess: ({ access_token, ...user }) => {
+      queryClient.clear()
       auth.setAccessToken(access_token)
       auth.setUser(user)
     },

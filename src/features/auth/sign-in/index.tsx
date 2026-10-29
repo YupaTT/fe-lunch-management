@@ -1,10 +1,7 @@
-import { useSearch } from '@tanstack/react-router'
 import { UtensilsCrossed } from 'lucide-react'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
-  const { redirect } = useSearch({ from: '/(auth)/sign-in' })
-
   return (
     <div className='flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10'>
       <div className='flex w-full max-w-sm flex-col gap-6'>
@@ -14,7 +11,7 @@ export function SignIn() {
           </div>
           Gestión de Almuerzos
         </div>
-        <UserAuthForm redirectTo={redirect} />
+        <UserAuthForm />
       </div>
     </div>
   )
